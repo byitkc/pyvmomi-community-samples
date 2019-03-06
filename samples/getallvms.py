@@ -23,8 +23,55 @@ import atexit
 from pyVim import connect
 from pyVmomi import vmodl
 from pyVmomi import vim
+import argparse
+from getpass import getpass
 
-import tools.cli as cli
+def get_args():
+    """
+    This sample uses different arguments than the standard sample. We also
+    need the vihost to work with.
+    """
+    parser = argparse.ArgumentParser(
+        description='Process args for retrieving all the Virtual Machines')
+
+    parser.add_argument('-s', '--host',
+                        required=True,
+                        action='store',
+                        help='Remote host to connect to')
+
+    parser.add_argument('-o', '--port',
+                        type=int,
+                        default=443,
+                        action='store',
+                        help='Port to connect on')
+
+    parser.add_argument('-u', '--user',
+                        required=True,
+                        action='store',
+                        help='User name to use when connecting to host')
+
+    parser.add_argument('-p', '--password',
+                        required=False,
+                        action='store',
+                        help='Password to use when connecting to host')
+
+    parser.add_argument('-v', '--vmname',
+                        required=False,
+                        action='store',
+                        help='Name of the Virtual Machine to get VMware Tools status from')
+
+    parser.add_argument('-S', '--disable_ssl_verification',
+                        required=False,
+                        action='store_true',
+                        help='Disable ssl host certificate verification')
+
+    args = parser.parse_args()
+    if not args.password:
+        args.password = getpass(
+            prompt='Enter password for host %s and user %s: ' %
+                   (args.host, args.user))
+
+    return args
 
 
 def print_vm_info(virtual_machine):
@@ -64,7 +111,7 @@ def main():
     Simple command-line program for listing the virtual machines on a system.
     """
 
-    args = cli.get_args()
+    args = get_args()
 
     try:
         if args.disable_ssl_verification:
