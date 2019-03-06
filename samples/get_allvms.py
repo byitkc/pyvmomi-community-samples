@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#
+# Modified by Brandon Young
+# GitHub: https://github.com/byitkc
+# Email: b@byitkc.com
+#
 # VMware vSphere Python SDK
 # Copyright (c) 2008-2013 VMware, Inc. All Rights Reserved.
 #
@@ -113,26 +118,35 @@ def main():
 
     args = get_args()
 
-    si = connect.SmartConnect(
-                    host=args.host,
-                    user=args.username,
-                    pwd=args.password,
-                    port=args.port,
-                    sslContext=sslContext)
+    try:
+        if args.disable_ssl_verification:
+            service_instance = connect.SmartConnectNoSSL(host=args.host,
+                                                         user=args.user,
+                                                         pwd=args.password,
+                                                         port=int(args.port))
+        else:
+            service_instance = connect.SmartConnect(host=args.host,
+                                                    user=args.user,
+                                                    pwd=args.password,
+                                                    port=int(args.port))
 
-    atexit.register(si.Disconnect, service_instance)
+        atexit.register(connect.Disconnect, service_instance)
 
-    content = service_instance.RetrieveContent()
+        content = service_instance.RetrieveContent()
 
-    container = content.rootFolder
-    viewType = [vim.VirtualMachine]
-    recursive = True
-    containerView = content.viewManager.CreateContainerView(
-        container, viewType, recursive)
+        container = content.rootFolder  # starting point to look into
+        viewType = [vim.VirtualMachine]  # object types to look for
+        recursive = True  # whether we should look into it recursively
+        containerView = content.viewManager.CreateContainerView(
+            container, viewType, recursive)
 
-    children = containerView.view
-    for child in children:
-        print_vm_info(child)
+        children = containerView.view
+        for child in children:
+            print_vm_info(child)
+
+    except vmodl.MethodFault as error:
+        print("Caught vmodl fault : " + error.msg)
+        return -1
 
     return 0
 
